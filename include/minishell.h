@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   minishell.h                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: dsamuel <dsamuel@student.42.fr>            +#+  +:+       +#+        */
+/*   By: ojacobs <ojacobs@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/09 22:23:45 by dsamuel           #+#    #+#             */
-/*   Updated: 2024/10/11 21:27:51 by dsamuel          ###   ########.fr       */
+/*   Updated: 2024/10/16 22:09:18 by ojacobs          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,7 +24,7 @@
 # include <sys/types.h>
 # include <sys/ioctl.h>
 # include <sys/stat.h>
-# include <limits.h>
+# include <linux/limits.h>
 # include <errno.h>
 # include <signal.h>
 # include <readline/readline.h>
@@ -151,7 +151,8 @@ typedef struct s_expand_data
 /*
 ** BUILTINS
 */
-void	cmd_echo(char **args);
+int	ft_echo(char **args);
+//void	cmd_echo(char **args);
 /*
 ** PARSING
 */

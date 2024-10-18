@@ -3,15 +3,23 @@
 /*                                                        :::      ::::::::   */
 /*   signals.c                                          :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: dsamuel <dsamuel@student.42.fr>            +#+  +:+       +#+        */
+/*   By: ojacobs <ojacobs@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/11 20:00:14 by dsamuel           #+#    #+#             */
-/*   Updated: 2024/10/11 21:26:34 by dsamuel          ###   ########.fr       */
+/*   Updated: 2024/10/12 18:52:33 by ojacobs          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "minishell.h"
 
+typedef struct token {
+	char **cmd:
+	char *args
+	int pipe 
+	char *infile;
+	char outfile;
+	int herdoc;
+}
 
 void	*ft_memdel(void *ptr)
 {
@@ -22,7 +30,6 @@ void	*ft_memdel(void *ptr)
 	}
 	return (NULL);
 }
-
 
 void	ft_sig_integer(int signal)
 {
@@ -42,7 +49,6 @@ void	ft_sig_integer(int signal)
 	global_sig.sigint_received = 1;
 }
 
-
 void	ft_sig_exit(int signal)
 {
 	char	*nbr;
@@ -59,7 +65,6 @@ void	ft_sig_exit(int signal)
 		ft_putstr_fd("\b\b  \b\b", STDERR);
 	ft_memdel(nbr);
 }
-
 
 void	ft_sig_init(void)
 {
