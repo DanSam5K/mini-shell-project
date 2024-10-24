@@ -1,3 +1,17 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   redirections.c                                     :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: ojacobs <ojacobs@student.42.fr>            +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2024/10/24 15:28:09 by ojacobs           #+#    #+#             */
+/*   Updated: 2024/10/24 17:42:13 by ojacobs          ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
+#include "minishell.h"
+
 /**
  * redir - Handles output redirection to a specified file.
  * 
@@ -31,6 +45,49 @@
 // Exit the function.
 // Duplicate the output file descriptor (shell_state->output_fd) to STDOUT.
 
+
+void	redir_output(t_shell_state *shell_state, t_cmd_token *token, int type)
+{
+    int new_fd;
+
+    // Close the current output file descriptor, if it's valid
+    if (shell_state->output_fd > 0)
+        close(shell_state->output_fd);
+
+    // Check the redirection type (TRUNC or APPEND)
+    if (type == TRUNC)
+        new_fd = open(token->content, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+    else
+        new_fd = open(token->content, O_WRONLY | O_CREAT | O_APPEND, 0644);
+
+    // Check if the file was successfully opened
+    if (new_fd == -1)
+    {
+        // Error opening the file, display an error message
+        ft_putstr_fd("minishell: ", STDERR);
+        ft_putstr_fd(token->content, STDERR);
+        ft_putendl_fd(": No such file or directory", STDERR);
+
+        // Set the return code and skip execution
+        shell_state->return_code = 1;
+        shell_state->should_skip_exec = 1;
+        return;
+    }
+
+    // Assign the new file descriptor to output_fd
+    shell_state->output_fd = new_fd;
+
+    // Redirect STDOUT to the new file descriptor
+    if (dup2(shell_state->output_fd, STDOUT_FILENO) == -1)
+    {
+        perror("dup2");
+        shell_state->return_code = 1;
+        shell_state->should_skip_exec = 1;
+        close(shell_state->output_fd);
+    }
+}
+
+
 /**
  * input - Handles input redirection from a specified file.
  * 
@@ -54,6 +111,44 @@
 // Set the no_exec flag in mini to indicate that execution should not proceed.
 // Exit the function.
 // Duplicate the input file descriptor (shell->input_fd) to STDIN.
+
+void	redir_input(t_shell_state *shell_state, t_cmd_token *token)
+{
+    int new_fd;
+
+    // Close the current input file descriptor, if it's valid
+    if (shell_state->input_fd > 0)
+        close(shell_state->input_fd);
+
+    // Open the file in read-only mode
+    new_fd = open(token->content, O_RDONLY);
+
+    // Check if the file was successfully opened
+    if (new_fd == -1)
+    {
+        // Error opening the file, display an error message
+        ft_putstr_fd("minishell: ", STDERR);
+        ft_putstr_fd(token->content, STDERR);
+        ft_putendl_fd(": No such file or directory", STDERR);
+
+        // Set the return code and skip execution
+        shell_state->return_code = 1;
+        shell_state->should_skip_exec = 1;
+        return;
+    }
+
+    // Assign the new file descriptor to input_fd
+    shell_state->input_fd = new_fd;
+
+    // Redirect STDIN to the new file descriptor
+    if (dup2(shell_state->input_fd, STDIN_FILENO) == -1)
+    {
+        perror("dup2");
+        shell_state->return_code = 1;
+        shell_state->should_skip_exec = 1;
+        close(shell_state->input_fd);
+    }
+}
 
 /**
  * minipipe - Creates a pipe for inter-process communication and forks a new process.
@@ -92,3 +187,55 @@
 // Set shell_state->proc_id to the child's process ID.
 // Set shell_state->last_exit_status to 0.
 // Return 1 to indicate this is the parent process.
+
+
+// Main minipipe function
+int	minipipe(t_shell_state *shell_state)
+{
+    int pipefd[2];
+    pid_t pid;
+
+    if (create_pipe(pipefd) == -1)
+        return -1;
+
+    pid = fork();
+    if (pid == -1)
+    {
+        perror("fork");
+        return -1;
+    }
+    else if (pid == 0)
+        return handle_child_process(pipefd, shell_state);
+    else
+        return handle_parent_process(pipefd, pid, shell_state);
+}
+
+//function to handle the operations "<" ">" ">>" and "|"
+int ft_redir_iop(char *ops, t_shell_state *shell_state, t_cmd_token *token)
+{
+    int type = 0; // Initialize type (for redirection type, like TRUNC or APPEND)
+
+    // Handle output redirection with ">" (truncate) and ">>" (append)
+    if (ft_strcmp(ops, ">") == 0)
+    {
+        type = TRUNC;
+        return redir(shell_state, token, type);
+    }
+    else if (ft_strcmp(ops, ">>") == 0)
+    {
+        type = APPEND;
+        return redir(shell_state, token, type);
+    }
+    // Handle input redirection with "<"
+    else if (ft_strcmp(ops, "<") == 0)
+        return input(shell_state, token);
+    // Handle piping with "|"
+    else if (ft_strcmp(ops, "|") == 0)
+        return minipipe(shell_state);
+    else
+    {
+        // If the operation is not recognized, print an error
+        ft_putendl_fd("Error: Invalid operation", STDERR);
+        return -1;
+    }
+}
